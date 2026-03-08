@@ -1,6 +1,6 @@
 # Travel Assistant MCP Server
 
-The Travel Assistant is a Model Context Protocol (MCP) server built with Python and `FastMCP`. It provides a large language model with real-time tools to plan and budget travel itineraries. The assistant can fetch live flight and hotel data, track a trip budget, get weather information, and recommend local landmarks securely.
+The Travel Assistant is a Model Context Protocol (MCP) server built with Python and `FastMCP`. It provides a large language model with real-time tools to plan and budget travel itineraries. The assistant can fetch live flight and hotel data, track a trip budget,  and recommend local landmarks securely.
 
 ## Features & Available Tools
 
@@ -14,7 +14,6 @@ This server exposes several capabilities to the LLM (`server3.py`):
   * `set_budget(amount)` and `get_budget()` - Keeps track of the user's total spending capacity for the trip.
   * `validate_booking(price)` - A capability fence that prevents the AI from finalizing or proposing bookings that exceed the remaining budget.
 * **Local Info:**
-  * `check_weather(destination)` - Fetches real-time weather conditions using the Weatherbit API.
   * `recommend_sites(destination)` - Gathers landmark and sightseeing recommendations using Wikipedia data.
 
 ## Setup & Configuration
@@ -24,7 +23,6 @@ This server exposes several capabilities to the LLM (`server3.py`):
    ```env
    AMADEUS_API_KEY=your_amadeus_api_key
    AMADEUS_API_SECRET=your_amadeus_api_secret
-   WEATHERBIT_API_KEY=your_weatherbit_api_key
    ```
    *(Note: The `.env` file is gitignored to protect your credentials).*
 
@@ -60,4 +58,4 @@ To use this Travel Assistant through the Gemini CLI, you need to configure the M
    gemini
    ```
    You can now start asking the assistant to plan your trip! For example:
-   * *"I have a budget of $3000. Find me a flight from Paris (PAR) to Athens (ATH) for next Friday, check the weather, and recommend some hotels!"*
+   * *"I have a budget of $3000. Find me a flight from Paris (PAR) to Athens (ATH) for next Friday,  recommend some hotels!"*
