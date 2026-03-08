@@ -1,0 +1,45 @@
+# Travel Assistant MCP Server - Improvement Analysis & Future Design Choices
+
+This document outlines structural and functional improvements we could implement for the travel assistant MCP server (`server3.py`), especially considering it is used with the `gemini` CLI.
+
+## 1. Design Choices and Architecture Improvements
+
+*   **Error Handling and Graceful Degradation:**
+    Currently, errors from third-party APIs (Amadeus, Weatherbit, Wikipedia) are caught and returned as string error messages. 
+    *   *Improvement:* We could use structured JSON error responses (e.g., standardizing on a `status` and `message` format) so the LLM can precisely understand the failure mode (rate limit vs. invalid input) and inform the user appropriately without parsing string traces.
+*   **Asynchronous Execution for Tools:**
+    Tools like flight searches or Wikipedia scrapers block the main thread.
+    *   *Improvement:* Utilizing asynchronous functions (`async def`) for API calls in Python would improve the server's throughput, allowing `FastMCP` to handle multiple concurrent LLM tool executions if supported by the client.
+*   **Configuration Management:**
+    Keys are loaded via `.env` but scattered across tool functions (`os.environ.get(...)`).
+    *   *Improvement:* Use a structured configuration class (e.g., `pydantic.BaseSettings`) initialized at startup to fail-fast if critical API keys are missing before the server even starts, rather than waiting for a specific tool call to fail.
+
+## 2. Potential Tool Additions
+
+To make the travel assistant more autonomous and comprehensive:
+*   **Live Event/Attractions Booking:** A tool like `search_events(cityCode, date)` using Ticketmaster or Amadeus Events API to find activities.
+*   **Currency Conversion with Historical Trends:** Expand `currency_convert` to provide average exchange rates over the last 30 days to help users decide when to buy currency.
+*   **User Preferences Management:** `set_preference(key, value)` tool (e.g., seat preference="window", dietary="vegan"). The LLM can retrieve these to tailor flight or hotel queries.
+*   **Itinerary Builder/Exporter:** `export_itinerary(format)` tool to save the LLM-generated trip plan to a PDF or markdown file for the user to print.
+
+## 3. Strategy for Memory Management (Gemini CLI Context)
+
+When using a conversational CLI like `gemini` that relies on the context window for short-term memory:
+*   **Stateful Server vs. Stateless Server:** 
+    Currently, `budget_state` is a global variable in `server3.py`. If the MCP server restarts, the budget is wiped. This is highly volatile.
+    *   *Improvement:* Implement a dedicated memory layer. The server could write state to a local SQLite database or a `session_state.json` file.
+*   **Short-term vs. Long-term Memory:**
+    *   *Short-term (Conversation Level):* Let the Gemini CLI handle immediate context (what was asked two turns ago).
+    *   *Long-term (Entity Level):* The MCP server should manage persistent facts (Total Budget, Selected Flights, Hotel Bookings). 
+*   **Memory Tooling:** Add a `remember_trip_detail(key, value)` and `recall_trip_detail(key)` tool. The LLM can explicitly save the final chosen flight ID so it doesn't have to keep it in its LLM context window across long conversations.
+
+## 4. Tool Output Validation
+
+Relying on raw API JSON dumps converted to strings can confuse the LLM if the schema changes or data is excessively large.
+*   **Schema Enforcement with Pydantic:**
+    *   *Improvement:* Wrap all external API responses in Pydantic models. Before returning the string to the LLM, the model validates that `price`, `currency`, and `id` exist and are of the correct type (float, str).
+*   **Token Optimization / Output Truncation:**
+    Amadeus often returns hundreds of flights, which can exceed the LLM context window or cause generation timeouts in the CLI.
+    *   *Improvement:* The output validator should strictly limit array sizes (e.g., returning only the top 5 cheapest flights) or summarizing raw data to ensure the output string always stays under a strict token budget.
+*   **Sanitization:**
+    Ensure no PII (Personally Identifiable Information) or raw API keys are ever leaked in tool return strings by running all outputs through a sanitizer function.
