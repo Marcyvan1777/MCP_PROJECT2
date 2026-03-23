@@ -57,5 +57,5 @@ To use this Travel Assistant through the Gemini CLI, you need to configure the M
    ```bash
    gemini
    ```
-   You can now start asking the assistant to plan your trip, For example:
+   You can now start asking the assistant to plan your trip! For example:
    * *"I have a budget of $3000. Find me a flight from Paris (PAR) to Athens (ATH) for next Friday,  recommend some hotels!"*
